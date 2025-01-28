@@ -52,11 +52,15 @@ type InitializeResult struct {
 
 // Position is a simple y,x coordinate. Both values start at 0.
 type Position struct {
-	Line      uint `json:"line"`
-	Character uint `json:"character"`
+	Line      int `json:"line"`
+	Character int `json:"character"`
 }
 
 type HoverParams struct {
-	TextDocument string   `json:"textDocument"`
-	Position     Position `json:"position"`
+	TextDocument TextDocument `json:"textDocument"`
+	Position     Position     `json:"position"`
+}
+
+type HoverResult struct {
+	Contents string `json:"contents"`
 }

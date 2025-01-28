@@ -4,10 +4,13 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 )
 
@@ -41,6 +44,9 @@ func main() {
 	for {
 		line, _, err := reader.ReadLine()
 		if err != nil {
+			if errors.Is(err, io.EOF) {
+				return
+			}
 			log.Println(err)
 			continue
 		}
@@ -122,6 +128,50 @@ func (h *handler) Handle(ctx context.Context, req RpcCall) (any, error) {
 
 		h.fileCache[openParams.TextDocument.URI] = openParams.ContentChanges[0].Text
 	case "textDocument/hover":
+		var hoverParams HoverParams
+		if err := json.Unmarshal(req.Params, &hoverParams); err != nil {
+			return nil, err
+		}
+
+		log.Println("Cache", h.fileCache)
+		file := h.fileCache[hoverParams.TextDocument.URI]
+		lines := strings.Split(file, "\n")
+		log.Println(lines)
+		line := lines[hoverParams.Position.Line]
+		log.Println(len(line))
+		pos := hoverParams.Position.Character
+		char := line[pos]
+		if char == ' ' {
+			return HoverResult{}, nil
+		}
+
+		var word string
+		startOfWord := strings.LastIndexByte(line[:pos], ' ')
+		endOfWord := strings.IndexByte(line[pos:], ' ')
+		log.Println(startOfWord, endOfWord)
+		if startOfWord == -1 && endOfWord == -1 {
+			word = line
+		} else if startOfWord == -1 {
+			word = line[:endOfWord+int(pos)]
+		} else if endOfWord == -1 {
+			word = line[startOfWord+1:]
+		} else {
+			word = line[startOfWord+1 : endOfWord+pos]
+		}
+
+		word = strings.TrimSpace(word)
+		switch word {
+		case "services:":
+			log.Println("Match:", word)
+			return HoverResult{
+				Contents: "`services` holds a map of all services. It can contain 0 to n values.",
+			}, nil
+		case "image:":
+			log.Println("Match:", word)
+			return HoverResult{
+				Contents: "`image` defines which Docker image is deployed.",
+			}, nil
+		}
 	}
 	return nil, nil
 }
