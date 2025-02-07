@@ -12,6 +12,9 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+
+	"github.com/docker/docker/api/types/image"
+	"github.com/docker/docker/client"
 )
 
 func main() {
@@ -22,9 +25,22 @@ func main() {
 	log.SetOutput(logfile)
 
 	ctx := context.Background()
-	// listener := NewStdListener()
 	handler := &handler{
 		fileCache: make(map[string]string),
+	}
+
+	dockerClient, err := client.NewClientWithOpts()
+	if err != nil {
+		panic(err)
+	}
+	images, err := dockerClient.ImageList(ctx, image.ListOptions{All: true})
+	if err != nil {
+		panic(err)
+	}
+	for _, image := range images {
+		for _, tag := range image.RepoTags {
+			handler.cachedImages = append(handler.cachedImages, tag)
+		}
 	}
 
 	go func() {
@@ -94,7 +110,8 @@ func main() {
 }
 
 type handler struct {
-	fileCache map[string]string
+	fileCache    map[string]string
+	cachedImages []string
 }
 
 func (h *handler) Handle(ctx context.Context, req RpcCall) (any, error) {
@@ -104,9 +121,10 @@ func (h *handler) Handle(ctx context.Context, req RpcCall) (any, error) {
 	case "initialize":
 		return InitializeResult{
 			Capabilities: ServerCapabilities{
-				PositionEncoding: PositionEncodingUTF8,
-				HoverProvider:    true,
-				TextDocumentSync: TextDocumentSyncKindFull,
+				PositionEncoding:   PositionEncodingUTF8,
+				TextDocumentSync:   TextDocumentSyncKindFull,
+				HoverProvider:      true,
+				CompletionProvider: CompletionProvider{},
 			},
 			ServerInfo: ServerInfo{
 				Name:    "presentation_lsp",
@@ -127,18 +145,36 @@ func (h *handler) Handle(ctx context.Context, req RpcCall) (any, error) {
 		}
 
 		h.fileCache[openParams.TextDocument.URI] = openParams.ContentChanges[0].Text
+	case "textDocument/completion":
+		var completionParams TextDocumentPositionParams
+		if err := json.Unmarshal(req.Params, &completionParams); err != nil {
+			return nil, err
+		}
+
+		file := h.fileCache[completionParams.TextDocument.URI]
+		lines := strings.Split(file, "\n")
+		line := lines[completionParams.Position.Line]
+
+		var result CompletionList
+		imageIndex := strings.Index(line, "image:")
+		if imageIndex != -1 && (imageIndex+6) < completionParams.Position.Character {
+			for _, image := range h.cachedImages {
+				result.Items = append(result.Items, CompletionItem{
+					Label: image,
+				})
+			}
+		}
+
+		return result, nil
 	case "textDocument/hover":
-		var hoverParams HoverParams
+		var hoverParams TextDocumentPositionParams
 		if err := json.Unmarshal(req.Params, &hoverParams); err != nil {
 			return nil, err
 		}
 
-		log.Println("Cache", h.fileCache)
 		file := h.fileCache[hoverParams.TextDocument.URI]
 		lines := strings.Split(file, "\n")
-		log.Println(lines)
 		line := lines[hoverParams.Position.Line]
-		log.Println(len(line))
 		pos := hoverParams.Position.Character
 		char := line[pos]
 		if char == ' ' {
@@ -148,7 +184,6 @@ func (h *handler) Handle(ctx context.Context, req RpcCall) (any, error) {
 		var word string
 		startOfWord := strings.LastIndexByte(line[:pos], ' ')
 		endOfWord := strings.IndexByte(line[pos:], ' ')
-		log.Println(startOfWord, endOfWord)
 		if startOfWord == -1 && endOfWord == -1 {
 			word = line
 		} else if startOfWord == -1 {

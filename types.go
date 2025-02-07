@@ -39,10 +39,13 @@ type PositionEncoding string
 
 const PositionEncodingUTF8 PositionEncoding = "utf-8"
 
+type CompletionProvider struct{}
+
 type ServerCapabilities struct {
-	PositionEncoding PositionEncoding     `json:"positionEncoding"`
-	HoverProvider    bool                 `json:"hoverProvider"`
-	TextDocumentSync TextDocumentSyncKind `json:"textDocumentSync"`
+	PositionEncoding   PositionEncoding     `json:"positionEncoding"`
+	HoverProvider      bool                 `json:"hoverProvider"`
+	CompletionProvider CompletionProvider   `json:"completionProvider"`
+	TextDocumentSync   TextDocumentSyncKind `json:"textDocumentSync"`
 }
 
 type InitializeResult struct {
@@ -56,9 +59,18 @@ type Position struct {
 	Character int `json:"character"`
 }
 
-type HoverParams struct {
+type TextDocumentPositionParams struct {
 	TextDocument TextDocument `json:"textDocument"`
 	Position     Position     `json:"position"`
+}
+
+type CompletionItem struct {
+	Label string `json:"label"`
+}
+
+type CompletionList struct {
+	IsIncomplete bool             `json:"isIncomplete"`
+	Items        []CompletionItem `json:"items"`
 }
 
 type HoverResult struct {
