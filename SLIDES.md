@@ -30,19 +30,25 @@ A brief and incomplete history of code editing
     * autocompletion
     * refactoring features
     * ...
-  * The editor can show warnings and errors
-<!-- pause -->
+  * The editor can display information such as warnings and errors reported by
+  the LSP
+  * Most actions can happen asynchronous
+
+<!-- end_slide -->
 
 Where did LSP come from?
 ==
 
 <!-- pause --> 
-Microsoft released the specification when it worked on VS Code. The goal was
-to have one lightweight editor for potentially everything, without Microsoft
-having to maintain everything.
+Microsoft released the specification when it worked on VS Code.
+
+The goal was to have one lightweight editor for potentially everything, without
+Microsofthaving to maintain explicit language support.
 
 <!-- pause --> 
 A nice bonus is, that every editor can use this, such as vim, emacs and others.
+
+<!-- end_slide -->
 
 What technologies does LSP build on?
 ==
@@ -57,6 +63,8 @@ JSONRPC is a simple RPC (Remote Procedure Call) protocol:
   * Allows arbitrary function calls and responses
   * Allows notifications (functions without a response)
 
+<!-- end_slide -->
+
 The protocol - JSONRPC
 ==
 
@@ -69,16 +77,85 @@ A message may looks something like this:
 ```
 Content-Length: N\r\n
 \r\n
-{"id": 1, "metohd": "x", "params": {...}}
+{"id": 1, "method": "x", "params": {...}}
 ```
 <!-- pause --> 
 
 Each RPC call, consistents of at least 3 lines, separated by Windows linebreaks.
 
-The protocol - Sync
+Any response sent with the same ID as a request, is a response to that request.
+These can be sent out of order.
+
+<!-- pause --> 
+
+Example:
+
+```
+Content-Length: 58
+
+{"id": 1, "method": "hello", "params": {"name": "Marcel"}}
+```
+
+```
+Content-Length: 48
+
+{"id": 1, "result": {"message": "Hello Marcel"}}
+```
+
+<!-- end_slide -->
+
+The protocol - Handshake (Initialize)
 ==
 
-TODO How does syncing work? Point out different options.
+<!-- pause --> 
+1. Editor starts the server (system process)
+<!-- pause --> 
+2. Editor attaches to stdin and stdout
+<!-- pause --> 
+3. Editor sends an `initialze` request
+  * Contains the capabilities and preferences of the editor, such as:
+    * Encoding
+    * Capabilities (Completion, Refactoring, ...)
+    * Locales
+    * Project root directory
+    * ...
+<!-- pause --> 
+4. LSP responds with `initializeResult`
+  * Contains capabilities and server identity information
+<!-- pause --> 
+5. Both sides remember the capabilities and adjust their behaviour accordingly
+
+<!-- end_slide -->
+
+The protocol - Document Sync
+==
+
+LSP supports three different types of syncing. Editor and server have to agree
+upon which synchronisation protocol is used.
+<!-- pause --> 
+
+### None
+
+This one is the most primitive. It means no sync happens at all, you gotta read
+files from disk, never having the latest edits.
+<!-- pause --> 
+
+### Incremental
+
+You get the full document once and then get notified of any edits. This is the
+**preferred** way in terms of performance.
+
+However, it is harder to program.
+<!-- pause --> 
+
+### Full
+
+This is as primitive as `None`, but without disk IO. The editor sends you full
+text documents on every edit.
+
+Also easy to program and not quite optimal in terms of performance.
+
+<!-- end_slide -->
 
 The protocol - hover action
 ==

@@ -10,7 +10,6 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 
 	"github.com/docker/docker/api/types/image"
@@ -67,7 +66,6 @@ func main() {
 			continue
 		}
 		var contentLength uint
-		// FIXME Support different headers
 		fmt.Sscanf(string(line), "Content-Length: %d", &contentLength)
 		_, _, _ = reader.ReadLine()
 		buffer := make([]byte, contentLength)
@@ -107,106 +105,4 @@ func main() {
 		os.Stdout.WriteString(fmt.Sprintf("Content-Length: %d\r\n\r\n", len(responseBytes)))
 		os.Stdout.Write(responseBytes)
 	}
-}
-
-type handler struct {
-	fileCache    map[string]string
-	cachedImages []string
-}
-
-func (h *handler) Handle(ctx context.Context, req RpcCall) (any, error) {
-	log.Println("Incomming request", req.Method)
-	log.Println(string(req.Params))
-	switch req.Method {
-	case "initialize":
-		return InitializeResult{
-			Capabilities: ServerCapabilities{
-				PositionEncoding:   PositionEncodingUTF8,
-				TextDocumentSync:   TextDocumentSyncKindFull,
-				HoverProvider:      true,
-				CompletionProvider: CompletionProvider{},
-			},
-			ServerInfo: ServerInfo{
-				Name:    "presentation_lsp",
-				Version: "1",
-			},
-		}, nil
-	case "textDocument/didOpen":
-		var openParams TextDocumentOpenParams
-		if err := json.Unmarshal(req.Params, &openParams); err != nil {
-			return nil, err
-		}
-
-		h.fileCache[openParams.TextDocument.URI] = openParams.TextDocument.Text
-	case "textDocument/didChange":
-		var openParams TextDocumentChangeParams
-		if err := json.Unmarshal(req.Params, &openParams); err != nil {
-			return nil, err
-		}
-
-		h.fileCache[openParams.TextDocument.URI] = openParams.ContentChanges[0].Text
-	case "textDocument/completion":
-		var completionParams TextDocumentPositionParams
-		if err := json.Unmarshal(req.Params, &completionParams); err != nil {
-			return nil, err
-		}
-
-		file := h.fileCache[completionParams.TextDocument.URI]
-		lines := strings.Split(file, "\n")
-		line := lines[completionParams.Position.Line]
-
-		var result CompletionList
-		imageIndex := strings.Index(line, "image:")
-		if imageIndex != -1 && (imageIndex+6) < completionParams.Position.Character {
-			for _, image := range h.cachedImages {
-				result.Items = append(result.Items, CompletionItem{
-					Label: image,
-				})
-			}
-		}
-
-		return result, nil
-	case "textDocument/hover":
-		var hoverParams TextDocumentPositionParams
-		if err := json.Unmarshal(req.Params, &hoverParams); err != nil {
-			return nil, err
-		}
-
-		file := h.fileCache[hoverParams.TextDocument.URI]
-		lines := strings.Split(file, "\n")
-		line := lines[hoverParams.Position.Line]
-		pos := hoverParams.Position.Character
-		char := line[pos]
-		if char == ' ' {
-			return HoverResult{}, nil
-		}
-
-		var word string
-		startOfWord := strings.LastIndexByte(line[:pos], ' ')
-		endOfWord := strings.IndexByte(line[pos:], ' ')
-		if startOfWord == -1 && endOfWord == -1 {
-			word = line
-		} else if startOfWord == -1 {
-			word = line[:endOfWord+int(pos)]
-		} else if endOfWord == -1 {
-			word = line[startOfWord+1:]
-		} else {
-			word = line[startOfWord+1 : endOfWord+pos]
-		}
-
-		word = strings.TrimSpace(word)
-		switch word {
-		case "services:":
-			log.Println("Match:", word)
-			return HoverResult{
-				Contents: "`services` holds a map of all services. It can contain 0 to n values.",
-			}, nil
-		case "image:":
-			log.Println("Match:", word)
-			return HoverResult{
-				Contents: "`image` defines which Docker image is deployed.",
-			}, nil
-		}
-	}
-	return nil, nil
 }
