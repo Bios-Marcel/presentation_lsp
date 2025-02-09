@@ -1,5 +1,6 @@
 *.pprof
 *.exe
+/lsp
 out.log
 conn.go
 stdlistener.go

@@ -11,7 +11,29 @@ local docker registry image autocompletion.
 
 ### Usage in Neovim
 
+To start once in the current buffer:
+
 ```
 lua vim.lsp.start({cmd={"./lsp"},root_dir=vim.fn.getcwd()})
+```
+
+To permanently set it up:
+
+```lua
+local lspconfig = require("lspconfig")
+require("lspconfig.configs").dclsp = {
+  default_config = {
+    cmd = { "./lsp" },
+    filetypes = { "yaml" },
+    root_dir = function(fname)
+      return lspconfig.util.find_git_ancestor(fname) or vim.fn.getcwd()
+    end,
+    settings = {},
+  },
+}
+
+lspconfig.dclsp.setup({
+  on_attach = on_attach,
+})
 ```
 
