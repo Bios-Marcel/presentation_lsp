@@ -160,6 +160,63 @@ Also easy to program and not quite optimal in terms of performance.
 The protocol - hover action
 ==
 
-The protocol - code action
+The `hover` action is used to display information about whatever is under the
+cursor. This can be a symbol or anything else that the language server supports.
+
+The requests are quite simple:
+
+```json
+"position": {
+  "line": 0,
+  "character": 2
+},
+"textDocument": {
+  "uri":"file:\/\/\/home\/marcel\/code\/presentation_lsp\/docker-compose.yml"
+}
+```
+
+The server then responds with plaintext or markdown in the `contents` field:
+
+```json
+"contents": "`image` defines which Docker image is deployed."
+```
+
+The protocol - completion action
 ==
+
+The `completion` action is quite similar to `hover`:
+
+```json
+"context": {
+  "triggerKind": 1
+},
+"position": {
+  "line": 2,
+  "character": 12
+},
+"textDocument": {
+  "uri":"file:\/\/\/home\/marcel\/code\/presentation_lsp\/docker-compose.yml"
+}
+```
+
+Response:
+
+```json
+"isIncomplete": false,
+"items": [
+  {"label":"traefik:latest"},
+  {"label":"biosmarcel/scribble.rs:latest"},
+  {"label":"biosmarcel/scribble.rs:v0.9.3"},
+  {"label":"biosmarcel/scribble.rs:v0.9.2"}
+]
+```
+
+Future usecases
+==
+
+* LLMs
+  * Built-in support
+  * Expose semantical context via API
+* ???
+
 
