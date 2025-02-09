@@ -43,7 +43,7 @@ func (h *handler) handleDidChange(params json.RawMessage) (any, error) {
 }
 
 func (h *handler) handleCompletion(params json.RawMessage) (any, error) {
-	var completionParams TextDocumentPositionParams
+	var completionParams CompletionParams
 	if err := json.Unmarshal(params, &completionParams); err != nil {
 		return nil, err
 	}
@@ -66,7 +66,7 @@ func (h *handler) handleCompletion(params json.RawMessage) (any, error) {
 }
 
 func (h *handler) handleHover(params json.RawMessage) (any, error) {
-	var hoverParams TextDocumentPositionParams
+	var hoverParams HoverParams
 	if err := json.Unmarshal(params, &hoverParams); err != nil {
 		return nil, err
 	}

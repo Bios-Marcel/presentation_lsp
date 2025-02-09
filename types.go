@@ -26,6 +26,10 @@ type Position struct {
 	Character int `json:"character"`
 }
 
+type HoverParams TextDocumentPositionParams
+
+type CompletionParams TextDocumentPositionParams
+
 type TextDocumentPositionParams struct {
 	TextDocument TextDocument `json:"textDocument"`
 	Position     Position     `json:"position"`
