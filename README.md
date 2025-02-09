@@ -3,6 +3,12 @@
 Slides are located at [SLIDES.md](/SLIDES.md). They can be used with
 [presenterm](https://github.com/mfontanini/presenterm).
 
+## Demo
+
+Small terminal recording in case you want to see what it looks like:
+
+https://asciinema.org/a/eW3vTISGvRF7gJMlTKiIMhhZV
+
 ## The LSP implementation
 
 The implementation is meant for docker-compose files. It's not a full language
