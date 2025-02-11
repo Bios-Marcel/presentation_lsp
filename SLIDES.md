@@ -14,13 +14,16 @@ A brief and incomplete history of code editing
 
 <!-- pause --> 
 1. Basic Editors
-  * Edit, Leave editor, compile, read compiler warnings, find cause in code
+  * Edit, leave editor, compile, read compiler warnings, find cause in code
+  * No refactoring features and no LLM 😂
+  * People read documentation in books
 <!-- pause -->
 2. Integrated Development Environments (IDEs)
   * The editor and the compiler run alongside eachother in the IDE
   * Warnings and errors are displayed in the IDE and maybe even inline
   * The code powering the editor was specifically built for the IDE and the
   language
+  * Tons of convenience features
 <!-- pause -->
 2. Editors with LSP
   * The editor has no understanding of any concrete language, the concrete
@@ -32,7 +35,7 @@ A brief and incomplete history of code editing
     * ...
   * The editor can display information such as warnings and errors reported by
   the LSP
-  * Most actions can happen asynchronous
+  * Most actions can happen asynchronously
 
 <!-- end_slide -->
 
@@ -40,13 +43,18 @@ Where did LSP come from?
 ==
 
 <!-- pause --> 
-Microsoft released the specification when it worked on VS Code.
+Microsoft released the specification after the VS Code release. They didn't
+invent the concept though.
 
 The goal was to have one lightweight editor for potentially everything, without
-Microsofthaving to maintain explicit language support.
+Microsoft having to maintain explicit language support.
 
 <!-- pause --> 
 A nice bonus is, that every editor can use this, such as vim, emacs and others.
+
+<!-- pause -->
+Funnily enough, other editors such as Neovim even have better support than
+VS Code opinion, as you need to write an extension for VS first.
 
 <!-- end_slide -->
 
